@@ -28,7 +28,7 @@ if __name__ == '__main__':
     torch.set_num_threads(1)
 
     env = gym.make(args.env_name)
-    model = ActorCritic(3, env.action_space.n)
+    model = ActorCritic(env.action_space.n)
     model.share_memory()
 
     processes = []

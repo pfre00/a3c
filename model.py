@@ -3,10 +3,10 @@ import torch.nn.functional as F
 
 class ActorCritic(nn.Module):
 
-    def __init__(self, num_inputs, action_space):
+    def __init__(self, action_space):
         super(ActorCritic, self).__init__()
         
-        self.conv1 = nn.Conv2d(num_inputs, 16, 8, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(3, 16, 8, stride=2, padding=1)
         self.conv2 = nn.Conv2d(16, 24, 6, stride=4, padding=1)
         self.conv3 = nn.Conv2d(24, 32, 3, stride=3, padding=1)
         self.conv4 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
