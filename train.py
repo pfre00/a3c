@@ -87,14 +87,14 @@ def train(rank, args, model):
         
         for t in reversed(range(len(rewards))):
             
-            R_t = args.gamma * R + rewards[t]
-            V_t = values[t]
-            A_t = R_t - V_t
-            log_prob_t = log_probs[t]
+            R = rewards[t] + args.gamma * R
+            V = values[t]
+            A = R - V
+            log_prob = log_probs[t]
             H = entropies[t]
             
-            value_loss = value_loss + A_t.pow(2)
-            policy_loss = policy_loss - log_prob_t * A_t - 0.01 * H
+            value_loss = value_loss + A.pow(2)
+            policy_loss = policy_loss - log_prob * A - 0.01 * H
 
         optimizer.zero_grad()
         (policy_loss + 0.25 * value_loss).backward()
