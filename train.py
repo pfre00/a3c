@@ -12,15 +12,9 @@ from model import ActorCritic
 def convert_state(state):
     return torch.from_numpy(state).float().permute(2, 0, 1).unsqueeze(0)
 
-def train(rank, args, model):
+def train(rank, args, global_model, local_model, optimizer):
 
     env = gym.make(args.env_name)
-
-    for param in model.parameters():
-        # Break gradient sharing
-        param.grad.data = param.grad.data.clone()
-
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     state = env.reset()
     reward_sum = 0
@@ -30,6 +24,8 @@ def train(rank, args, model):
     num_updates = 0
     
     while True:
+        
+        local_model.load_state_dict(global_model.state_dict())
         
         if done:
             cx = Variable(torch.zeros(1, 256))
@@ -45,10 +41,10 @@ def train(rank, args, model):
 
         for step in range(args.num_steps):
             
-            if rank == 0:
-                env.render()
+            #if rank == 0:
+                #env.render()
             
-            value, logit, (hx, cx) = model((Variable(convert_state(state)), (hx, cx)))
+            value, logit, (hx, cx) = local_model((Variable(convert_state(state)), (hx, cx)))
             prob = F.softmax(logit)
             log_prob = F.log_softmax(logit)
             entropy = -(log_prob * prob).sum(1)
@@ -78,9 +74,13 @@ def train(rank, args, model):
 
         R = torch.zeros(1, 1)
         if not done:
-            value, _, _ = model((Variable(convert_state(state)), (hx, cx)))
+            value, _, _ = local_model((Variable(convert_state(state)), (hx, cx)))
             R = value.data
         R = Variable(R)
+        
+        values.append(R)
+        
+        gae = torch.zeros(1, 1)
         
         policy_loss = 0
         value_loss = 0
@@ -88,26 +88,16 @@ def train(rank, args, model):
         for t in reversed(range(len(rewards))):
             
             R = rewards[t] + args.gamma * R
-            V = values[t]
-            A = R - V
-            log_prob = log_probs[t]
-            H = entropies[t]
+            advantage = R - values[t]
             
-            value_loss = value_loss + A.pow(2)
-            policy_loss = policy_loss - log_prob * A - 0.01 * H
+            value_loss = value_loss + advantage.pow(2)
 
+            # Generalized Advantage Estimataion
+            delta_t = rewards[t] + args.gamma * values[t + 1].data - values[t].data
+            gae = gae * args.gamma * args.tau + delta_t
+
+            policy_loss = policy_loss - log_probs[t] * Variable(gae) - 0.01 * entropies[t]
+            
         optimizer.zero_grad()
-        (policy_loss + 0.25 * value_loss).backward()
-        
-        '''
-        global_norm = 0
-        for param in model.parameters():
-            global_norm += param.grad.data.pow(2).sum()
-        global_norm = math.sqrt(global_norm)
-        ratio = 10 / global_norm
-        if ratio < 1:
-            for param in model.parameters():
-                param.grad.data.mul_(ratio)
-        '''
-        
+        (policy_loss + 0.5 * value_loss).backward()
         optimizer.step()

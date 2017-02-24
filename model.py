@@ -6,11 +6,11 @@ class ActorCritic(nn.Module):
     def __init__(self, action_space):
         super(ActorCritic, self).__init__()
         
-        self.conv1 = nn.Conv2d(3, 16, 8, stride=4, padding=3)
-        self.conv2 = nn.Conv2d(16, 24, 8, stride=4, padding=3)
-        self.conv3 = nn.Conv2d(24, 32, 6, stride=3, padding=2)
+        self.conv1 = nn.Conv2d(3, 4, 8, stride=4, padding=3)
+        self.conv2 = nn.Conv2d(4, 8, 8, stride=4, padding=3)
+        self.conv3 = nn.Conv2d(8, 16, 6, stride=3, padding=2)
         
-        self.lstm = nn.LSTMCell(384, 256)
+        self.lstm = nn.LSTMCell(192, 256)
         
         self.actor_linear = nn.Linear(256, action_space)
         self.critic_linear = nn.Linear(256, 1)
@@ -25,7 +25,7 @@ class ActorCritic(nn.Module):
         x = F.elu(self.conv2(x))
         x = F.elu(self.conv3(x))
         
-        x = x.view(-1, 384)
+        x = x.view(-1, 192)
         
         hx, cx = self.lstm(x, (hx, cx))
         x = hx
