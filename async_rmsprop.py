@@ -1,8 +1,3 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.autograd as autograd
-from torch.autograd import Variable
 from torch.optim import Optimizer
 
 class AsyncRMSprop(Optimizer):
