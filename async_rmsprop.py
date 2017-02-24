@@ -19,7 +19,7 @@ class AsyncRMSprop(Optimizer):
             for l_p, p in zip(l_group['params'], group['params']):
                 grad = l_p.grad.data
                 state = self.state[p]
-                state['step'] = torch.IntTensor(1).share_memory_()
+                state['step'] = 0
                 state['square_avg'] = grad.new().resize_as_(grad).zero_().share_memory_()
 
     def step(self, closure=None):

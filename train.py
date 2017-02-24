@@ -41,8 +41,8 @@ def train(rank, args, global_model, local_model, optimizer):
 
         for step in range(args.num_steps):
             
-            #if rank == 0:
-                #env.render()
+            if rank == 0 && args.render:
+                env.render()
             
             value, logit, (hx, cx) = local_model((Variable(convert_state(state)), (hx, cx)))
             prob = F.softmax(logit)
