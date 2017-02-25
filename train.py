@@ -1,5 +1,3 @@
-import math
-
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -7,21 +5,25 @@ from torch.autograd import Variable
 
 import gym
 
-from model import ActorCritic
+from datetime import datetime, timedelta
 
 def convert_state(state):
     return torch.from_numpy(state).float().permute(2, 0, 1).unsqueeze(0)
 
 def train(rank, args, global_model, local_model, optimizer):
 
+    t_start = datetime.now()
+    
     env = gym.make(args.env_name)
-
     state = env.reset()
-    reward_sum = 0
     done = True
 
+    reward_sum = 0
     running_reward = 0
-    num_updates = 0
+    episodes = 0
+    
+    if rank == 0:
+        print("t_now\tt_elapsed\tepisodes\trunning_reward\treward_sum")
     
     while True:
         
@@ -62,12 +64,14 @@ def train(rank, args, global_model, local_model, optimizer):
             reward_sum += reward
             
             if done:
-                running_reward = running_reward * 0.9 + reward_sum * 0.1
-                num_updates += 1
-
+                t_now = datetime.now()
+                t_elapsed = t_now - t_start
+                episodes += 1
+                running_reward = running_reward * 0.99 + reward_sum * 0.01
+                unbiased_running_reward = running_reward / (1 - pow(0.99, episodes))
                 if rank == 0:
-                    print("Agent {2}, episodes {0}, running reward {1:.2f}, current reward {3}".format(
-                        num_updates, running_reward / (1 - pow(0.9, num_updates)), rank, reward_sum))
+                    print("{}\t{}\t{}\t{:.2f}\t{}".format(
+                        t_now, t_elapsed, episodes, unbiased_running_reward, reward_sum))
                 reward_sum = 0
                 state = env.reset()
                 break
