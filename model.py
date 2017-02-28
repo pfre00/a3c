@@ -1,6 +1,9 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+lstm_in = 192
+lstm_out = 256
+
 class ActorCritic(nn.Module):
 
     def __init__(self, num_actions):
@@ -10,10 +13,10 @@ class ActorCritic(nn.Module):
         self.conv2 = nn.Conv2d(4, 8, 8, stride=4, padding=3)
         self.conv3 = nn.Conv2d(8, 16, 6, stride=3, padding=2)
         
-        self.lstm = nn.LSTMCell(192, 256)
+        self.lstm = nn.LSTMCell(lstm_in, lstm_out)
         
-        self.actor_linear = nn.Linear(256, num_actions)
-        self.critic_linear = nn.Linear(256, 1)
+        self.actor_linear = nn.Linear(lstm_out, num_actions)
+        self.critic_linear = nn.Linear(lstm_out, 1)
         
         self.train()
     
@@ -25,7 +28,7 @@ class ActorCritic(nn.Module):
         x = F.elu(self.conv2(x))
         x = F.elu(self.conv3(x))
         
-        x = x.view(-1, 192)
+        x = x.view(-1, lstm_in)
         
         hx, cx = self.lstm(x, (hx, cx))
         x = hx
