@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 class ActorCritic(nn.Module):
 
-    def __init__(self, action_space):
+    def __init__(self, num_actions):
         super(ActorCritic, self).__init__()
         
         self.conv1 = nn.Conv2d(3, 4, 8, stride=4, padding=3)
@@ -12,7 +12,7 @@ class ActorCritic(nn.Module):
         
         self.lstm = nn.LSTMCell(192, 256)
         
-        self.actor_linear = nn.Linear(256, action_space)
+        self.actor_linear = nn.Linear(256, num_actions)
         self.critic_linear = nn.Linear(256, 1)
         
         self.train()
