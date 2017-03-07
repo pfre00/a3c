@@ -13,6 +13,7 @@ convert_state = torchvision.transforms.Compose([
     torchvision.transforms.Lambda(lambda x: x.convert('L')),
     torchvision.transforms.Scale(84),
     torchvision.transforms.ToTensor(),
+    torchvision.transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)),
     torchvision.transforms.Lambda(lambda x: x.unsqueeze(0)),
 ])
 
@@ -103,7 +104,16 @@ def train(rank, args, global_model, local_model, optimizer):
             R = rewards[t] + args.gamma * R
             advantage = R - values[t]
             
-            policy_loss = policy_loss - log_probs[t] * Variable(advantage.data) - 0.01 * entropies[t]
+            #policy_loss = policy_loss - log_probs[t] * Variable(advantage.data) - 0.01 * entropies[t]
+            
+            # Generalized Advantage Estimataion
+            delta_t = rewards[t] + args.gamma * \
+                values[t + 1].data - values[t].data
+            gae = gae * args.gamma * args.tau + delta_t
+
+            policy_loss = policy_loss - \
+                log_probs[t] * Variable(gae) - 0.01 * entropies[t]
+            
             value_loss = value_loss + advantage.pow(2)
             
         optimizer.zero_grad()
