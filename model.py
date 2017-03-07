@@ -9,9 +9,9 @@ class ActorCritic(nn.Module):
     def __init__(self, num_actions):
         super(ActorCritic, self).__init__()
         
-        self.conv1 = nn.Conv2d(1, 4, 8, stride=4, padding=3)
-        self.conv2 = nn.Conv2d(4, 8, 6, stride=3, padding=2)
-        self.conv3 = nn.Conv2d(8, 16, 4, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(3, 4, 8, stride=4, padding=3)
+        self.conv2 = nn.Conv2d(4, 8, 8, stride=4, padding=3)
+        self.conv3 = nn.Conv2d(8, 16, 6, stride=3, padding=2)
         
         self.lstm = nn.LSTMCell(conv_out, lstm_out)
         
