@@ -16,12 +16,10 @@ parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
                     help='learning rate (default: 0.0001)')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor for rewards (default: 0.99)')
-parser.add_argument('--tau', type=float, default=1.00, metavar='L',
-                    help='parameter for GAE (default: 1.00)')
 parser.add_argument('--num-processes', type=int, default=4, metavar='N',
                     help='how many training processes to use (default: 4)')
-parser.add_argument('--num-steps', type=int, default=20, metavar='NS',
-                    help='number of forward steps in A3C (default: 20)')
+parser.add_argument('--num-steps', type=int, default=5, metavar='NS',
+                    help='number of forward steps in A3C (default: 5)')
 parser.add_argument('--env-name', default='Breakout-v0', metavar='ENV',
                     help='environment to train on (default: Breakout-v0)')
 parser.add_argument('--render', default=False, action='store_true',

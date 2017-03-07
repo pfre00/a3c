@@ -94,13 +94,8 @@ def train(rank, args, global_model, local_model, optimizer):
             R = rewards[t] + args.gamma * R
             advantage = R - values[t]
             
+            policy_loss = policy_loss - log_probs[t] * Variable(advantage.data) - 0.01 * entropies[t]
             value_loss = value_loss + advantage.pow(2)
-
-            # Generalized Advantage Estimataion
-            delta_t = rewards[t] + args.gamma * values[t + 1].data - values[t].data
-            gae = delta_t + args.gamma * args.tau * gae
-
-            policy_loss = policy_loss - log_probs[t] * Variable(gae) - 0.01 * entropies[t]
             
         optimizer.zero_grad()
         (policy_loss + 0.5 * value_loss).backward()
