@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 convert_state = torchvision.transforms.Compose([
     torchvision.transforms.ToPILImage(),
     torchvision.transforms.Lambda(lambda x: x.convert('L')),
-    torchvision.transforms.Scale(42),
+    torchvision.transforms.Scale(84),
     torchvision.transforms.ToTensor(),
     torchvision.transforms.Lambda(lambda x: x.unsqueeze(0)),
 ])

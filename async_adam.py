@@ -1,3 +1,6 @@
+import torch
+from torch.autograd import Variable
+
 import math
 from torch.optim import Optimizer
 
@@ -16,11 +19,11 @@ class AsyncAdam(Optimizer):
                 grad = l_p.grad.data
                 state = self.state[p]
                 if len(state) == 0:
-                    state['step'] = 0
+                    state['step'] = torch.zeros(1)
                     # Exponential moving average of gradient values
-                    state['exp_avg'] = grad.new().resize_as_(grad).zero_().share_memory_()
+                    state['exp_avg'] = grad.new().resize_as_(grad).zero_()
                     # Exponential moving average of squared gradient values
-                    state['exp_avg_sq'] = grad.new().resize_as_(grad).zero_().share_memory_()
+                    state['exp_avg_sq'] = grad.new().resize_as_(grad).zero_()
         
     def step(self, closure=None):
         loss = None
@@ -45,8 +48,8 @@ class AsyncAdam(Optimizer):
 
                 denom = exp_avg_sq.sqrt().add_(group['eps'])
 
-                bias_correction1 = 1 - beta1 ** state['step']
-                bias_correction2 = 1 - beta2 ** state['step']
+                bias_correction1 = 1 - beta1 ** state['step'][0]
+                bias_correction2 = 1 - beta2 ** state['step'][0]
                 step_size = group['lr'] * math.sqrt(bias_correction2) / bias_correction1
 
                 p.data.addcdiv_(-step_size, exp_avg, denom)
