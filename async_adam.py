@@ -18,9 +18,9 @@ class AsyncAdam(Optimizer):
                 if len(state) == 0:
                     state['step'] = 0
                     # Exponential moving average of gradient values
-                    state['exp_avg'] = grad.new().resize_as_(grad).zero_()
+                    state['exp_avg'] = grad.new().resize_as_(grad).zero_().share_memory_()
                     # Exponential moving average of squared gradient values
-                    state['exp_avg_sq'] = grad.new().resize_as_(grad).zero_()
+                    state['exp_avg_sq'] = grad.new().resize_as_(grad).zero_().share_memory_()
         
     def step(self, closure=None):
         loss = None
