@@ -12,6 +12,8 @@ from async_adam import AsyncAdam
 
 # Training settings
 parser = argparse.ArgumentParser(description='A3C')
+parser.add_argument('--seed', type=int, default=1, metavar='S',
+                    help='random seed (default: 1)')
 parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
                     help='learning rate (default: 0.0001)')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
@@ -28,6 +30,8 @@ parser.add_argument('--render', default=False, action='store_true',
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    
+    torch.manual_seed(args.seed)
     torch.set_num_threads(1)
 
     env = gym.make(args.env_name)

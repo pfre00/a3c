@@ -11,10 +11,13 @@ def convert_state(state):
     return torch.from_numpy(state).float().permute(2, 0, 1).unsqueeze(0)
 
 def train(rank, args, global_model, local_model, optimizer):
+    torch.manual_seed(args.seed + rank)
 
     t_start = datetime.now()
     
     env = gym.make(args.env_name)
+    env.seed(args.seed + rank)
+    
     state = env.reset()
     done = True
 
