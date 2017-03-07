@@ -40,7 +40,7 @@ if __name__ == '__main__':
     global_model.share_memory()
     local_model = ActorCritic(env.action_space.n)
     
-    optimizer = AsyncRMSprop(global_model.parameters(), local_model.parameters(), lr=args.lr)
+    optimizer = AsyncAdam(global_model.parameters(), local_model.parameters(), lr=args.lr)
 
     processes = []
     for rank in range(args.num_processes):

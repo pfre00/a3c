@@ -2,13 +2,19 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+import torchvision
 
 import gym
 
 from datetime import datetime, timedelta
 
-def convert_state(state):
-    return torch.from_numpy(state).float().permute(2, 0, 1).unsqueeze(0)
+convert_state = torchvision.transforms.Compose([
+    torchvision.transforms.ToPILImage(),
+    torchvision.transforms.Lambda(lambda x: x.convert('L')),
+    torchvision.transforms.Scale(42),
+    torchvision.transforms.ToTensor(),
+    torchvision.transforms.Lambda(lambda x: x.unsqueeze(0)),
+])
 
 def train(rank, args, global_model, local_model, optimizer):
     torch.manual_seed(args.seed + rank)

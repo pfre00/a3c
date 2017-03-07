@@ -34,7 +34,6 @@ class AsyncAdam(Optimizer):
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 beta1, beta2 = group['betas']
-
                 state['step'] += 1
 
                 if group['weight_decay'] != 0:
