@@ -18,8 +18,8 @@ parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
                     help='learning rate (default: 0.0001)')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor for rewards (default: 0.99)')
-parser.add_argument('--tau', type=float, default=1.00, metavar='T',
-                    help='parameter for GAE (default: 1.00)')
+parser.add_argument('--tau', type=float, default=0.9, metavar='T',
+                    help='parameter for GAE (default: 0.9)')
 parser.add_argument('--num-processes', type=int, default=4, metavar='N',
                     help='how many training processes to use (default: 4)')
 parser.add_argument('--num-steps', type=int, default=20, metavar='NS',

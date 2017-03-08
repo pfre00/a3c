@@ -13,13 +13,15 @@ convert_state = torchvision.transforms.Compose([
     #torchvision.transforms.Lambda(lambda x: x.convert('L')),
     #torchvision.transforms.Scale(84),
     torchvision.transforms.ToTensor(),
+    torchvision.transforms.Lambda(lambda x: x * 255),
     #torchvision.transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)),
     torchvision.transforms.Lambda(lambda x: x.unsqueeze(0)),
 ])
 
 def train(rank, args, global_model, local_model, optimizer):
     #torch.manual_seed(args.seed + rank)
-
+    torch.set_num_threads(1)
+    
     t_start = datetime.now()
     
     env = gym.make(args.env_name)
