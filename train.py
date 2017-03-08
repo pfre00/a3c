@@ -18,12 +18,12 @@ convert_state = torchvision.transforms.Compose([
 ])
 
 def train(rank, args, global_model, local_model, optimizer):
-    torch.manual_seed(args.seed + rank)
+    #torch.manual_seed(args.seed + rank)
 
     t_start = datetime.now()
     
     env = gym.make(args.env_name)
-    env.seed(args.seed + rank)
+    #env.seed(args.seed + rank)
     
     state = env.reset()
     done = True

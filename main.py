@@ -33,7 +33,7 @@ parser.add_argument('--render', default=False, action='store_true',
 if __name__ == '__main__':
     args = parser.parse_args()
     
-    torch.manual_seed(args.seed)
+    #torch.manual_seed(args.seed)
     torch.set_num_threads(1)
 
     env = gym.make(args.env_name)
