@@ -1,4 +1,6 @@
 import math
+
+import torch
 from torch.optim import Optimizer
 
 class AsyncAdam(Optimizer):
@@ -18,9 +20,9 @@ class AsyncAdam(Optimizer):
                     if len(state) == 0:
                         state['step'] = 0
                         # Exponential moving average of gradient values
-                        state['exp_avg'] = l_p.data.new().resize_as_(l_p.data).zero_()
+                        state['exp_avg'] = p.data.new().resize_as_(p.data).zero_()
                         # Exponential moving average of squared gradient values
-                        state['exp_avg_sq'] = l_p.data.new().resize_as_(l_p.data).zero_()
+                        state['exp_avg_sq'] = p.data.new().resize_as_(p.data).zero_()
         
     def step(self, closure=None):
         loss = None
