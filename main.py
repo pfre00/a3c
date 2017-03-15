@@ -14,17 +14,17 @@ from async_adam import AsyncAdam
 parser = argparse.ArgumentParser(description='A3C')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
-parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
-                    help='learning rate (default: 0.0001)')
+parser.add_argument('--lr', type=float, default=0.00001, metavar='LR',
+                    help='learning rate (default: 0.00001)')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor for rewards (default: 0.99)')
-parser.add_argument('--tau', type=float, default=0.9, metavar='T',
-                    help='parameter for GAE (default: 0.9)')
+parser.add_argument('--tau', type=float, default=0.96, metavar='T',
+                    help='parameter for GAE (default: 0.96)')
 parser.add_argument('--num-processes', type=int, default=4, metavar='N',
                     help='how many training processes to use (default: 4)')
 parser.add_argument('--num-steps', type=int, default=20, metavar='NS',
                     help='number of forward steps in A3C (default: 20)')
-parser.add_argument('--env-name', default='Breakout-v0', metavar='ENV',
+parser.add_argument('--env-name', default='BipedalWalker-v2', metavar='ENV',
                     help='environment to train on (default: Breakout-v0)')
 parser.add_argument('--render', default=False, action='store_true',
                     help='render the environment')
@@ -38,9 +38,9 @@ if __name__ == '__main__':
 
     env = gym.make(args.env_name)
     
-    global_model = ActorCritic(env.action_space.n)
+    global_model = ActorCritic(env.observation_space.shape[0], env.action_space.shape[0])
     global_model.share_memory()
-    local_model = ActorCritic(env.action_space.n)
+    local_model = ActorCritic(env.observation_space.shape[0], env.action_space.shape[0])
     
     optimizer = AsyncAdam(global_model.parameters(), local_model.parameters(), lr=args.lr)
 
