@@ -15,6 +15,12 @@ convert_state = torchvision.transforms.Compose([
     torchvision.transforms.Lambda(lambda x: Variable(x.unsqueeze(0))),
 ])
 
+def prob_density(x, mu, sigma2):
+    return (1 / (2 * sigma2 * math.pi).sqrt()) * (-(x - mu) ** 2 / (2 * sigma2)).exp()
+
+def diff_entropy(sigma2):
+    return - 0.5 * ((2 * math.pi * sigma2).log() + 1)
+
 def train(rank, args, global_model, local_model, optimizer):
     torch.manual_seed(args.seed + rank)
     torch.set_num_threads(1)
@@ -58,12 +64,10 @@ def train(rank, args, global_model, local_model, optimizer):
             mu, sigma2, value, (hx, cx) = local_model((convert_state(state), (hx, cx)))
             sigma2 = (1 + sigma2.exp()).log()
             
-            entropy = (- 0.5 * ((2 * math.pi * sigma2).log() + 1)).sum(1)
+            entropy = diff_entropy(sigma2).sum(1)
             
             action = Variable(torch.normal(mu, sigma2.sqrt()).data)
-            log_prob = ((1 / (2 * sigma2 * math.pi).sqrt()).log() - (action - mu) ** 2 / ( 2 * sigma2)).sum(1)
-            #log_prob = ( - sigma2.sqrt().log() - (action - mu) ** 2 / ( 2 * sigma2)).sum(1)
-            #log_prob = ((action - mu) / sigma2).sum(1)
+            log_prob = prob_density(action, mu, sigma2).log().sum(1)
             
             state, reward, done, _ = env.step(action.data[0])
             

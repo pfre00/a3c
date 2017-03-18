@@ -14,12 +14,12 @@ from async_adam import AsyncAdam
 parser = argparse.ArgumentParser(description='A3C')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
-parser.add_argument('--lr', type=float, default=0.00001, metavar='LR',
-                    help='learning rate (default: 0.00001)')
+parser.add_argument('--lr', type=float, default=0.0001, metavar='LR',
+                    help='learning rate (default: 0.0001)')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor for rewards (default: 0.99)')
-parser.add_argument('--tau', type=float, default=0.96, metavar='T',
-                    help='parameter for GAE (default: 0.96)')
+parser.add_argument('--tau', type=float, default=0.9, metavar='T',
+                    help='parameter for GAE (default: 0.9)')
 parser.add_argument('--num-processes', type=int, default=4, metavar='N',
                     help='how many training processes to use (default: 4)')
 parser.add_argument('--num-steps', type=int, default=20, metavar='NS',
