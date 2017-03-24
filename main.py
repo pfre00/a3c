@@ -7,8 +7,7 @@ import gym
 
 from model import ActorCritic
 from train import train
-from async_rmsprop import AsyncRMSprop
-from async_adam import AsyncAdam
+from shared_adam import SharedAdam
 
 # Training settings
 parser = argparse.ArgumentParser(description='A3C')
@@ -38,15 +37,15 @@ if __name__ == '__main__':
 
     env = gym.make(args.env_name)
     
-    global_model = ActorCritic(env.action_space.n)
-    global_model.share_memory()
-    local_model = ActorCritic(env.action_space.n)
+    shared_model = ActorCritic(env.action_space.n)
+    shared_model.share_memory()
     
-    optimizer = AsyncAdam(global_model.parameters(), local_model.parameters(), lr=args.lr)
+    optimizer = SharedAdam(shared_model.parameters(), lr=args.lr)
+    optimizer.share_memory()
 
     processes = []
     for rank in range(args.num_processes):
-        p = mp.Process(target=train, args=(rank, args, global_model, local_model, optimizer))
+        p = mp.Process(target=train, args=(rank, args, shared_model, optimizer))
         p.start()
         processes.append(p)
     for p in processes:

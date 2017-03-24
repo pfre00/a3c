@@ -2,8 +2,6 @@ import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
 
-from batch_renorm import BatchRenorm
-
 conv_out = 192
 lstm_out = 256
 

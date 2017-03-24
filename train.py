@@ -8,6 +8,8 @@ import gym
 
 from datetime import datetime, timedelta
 
+from model import ActorCritic
+
 convert_state = torchvision.transforms.Compose([
     torchvision.transforms.ToPILImage(),
     #torchvision.transforms.Lambda(lambda x: x.convert('L')),
@@ -18,7 +20,13 @@ convert_state = torchvision.transforms.Compose([
     torchvision.transforms.Lambda(lambda x: x.unsqueeze(0)),
 ])
 
-def train(rank, args, global_model, local_model, optimizer):
+def ensure_shared_grads(model, shared_model):
+    for param, shared_param in zip(model.parameters(), shared_model.parameters()):
+        if shared_param.grad is not None:
+            return
+        shared_param._grad = param.grad
+
+def train(rank, args, shared_model, optimizer):
     torch.manual_seed(args.seed + rank)
     torch.set_num_threads(1)
     
@@ -26,6 +34,8 @@ def train(rank, args, global_model, local_model, optimizer):
     
     env = gym.make(args.env_name)
     env.seed(args.seed + rank)
+    
+    model = ActorCritic(env.action_space.n)
     
     state = env.reset()
     done = True
@@ -35,11 +45,11 @@ def train(rank, args, global_model, local_model, optimizer):
     episodes = 0
     
     if rank == 0:
-        print("t_now\tt_elapsed\tepisodes\trunning_reward\treward_sum")
+        print("t_elapsed\tepisodes\trunning_reward\treward_sum")
     
     while True:
         
-        local_model.load_state_dict(global_model.state_dict())
+        model.load_state_dict(shared_model.state_dict())
         
         if done:
             cx = Variable(torch.zeros(1, 256))
@@ -58,7 +68,7 @@ def train(rank, args, global_model, local_model, optimizer):
             if rank == 0 and args.render:
                 env.render()
             
-            value, logit, (hx, cx) = local_model((Variable(convert_state(state)), (hx, cx)))
+            value, logit, (hx, cx) = model((Variable(convert_state(state)), (hx, cx)))
             prob = F.softmax(logit)
             log_prob = F.log_softmax(logit)
             entropy = -(log_prob * prob).sum(1)
@@ -82,15 +92,15 @@ def train(rank, args, global_model, local_model, optimizer):
                 running_reward = running_reward * 0.99 + reward_sum * 0.01
                 unbiased_running_reward = running_reward / (1 - pow(0.99, episodes))
                 if rank == 0:
-                    print("{}\t{}\t{}\t{:.2f}\t{}".format(
-                        t_now, t_elapsed, episodes, unbiased_running_reward, reward_sum))
+                    print("{}\t{}\t{:.2f}\t{}".format(
+                        t_elapsed, episodes, unbiased_running_reward, reward_sum))
                 reward_sum = 0
                 state = env.reset()
                 break
 
         R = torch.zeros(1, 1)
         if not done:
-            value, _, _ = local_model((Variable(convert_state(state)), (hx, cx)))
+            value, _, _ = model((Variable(convert_state(state)), (hx, cx)))
             R = value.data
         R = Variable(R)
         
@@ -116,4 +126,5 @@ def train(rank, args, global_model, local_model, optimizer):
             
         optimizer.zero_grad()
         (policy_loss + 0.5 * value_loss).backward()
+        ensure_shared_grads(model, shared_model)
         optimizer.step()
