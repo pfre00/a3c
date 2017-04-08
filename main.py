@@ -8,6 +8,7 @@ import gym
 from model import ActorCritic
 from train import train
 from shared_adam import SharedAdam
+from shared_rmsprop import SharedRMSprop
 
 # Training settings
 parser = argparse.ArgumentParser(description='A3C')
@@ -33,7 +34,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     torch.manual_seed(args.seed)
-    torch.set_num_threads(1)
 
     env = gym.make(args.env_name)
     
