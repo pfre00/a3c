@@ -10,21 +10,13 @@ from datetime import datetime, timedelta
 from model import ActorCritic
 from envs import create_atari_env
 
-def ensure_shared_grads(model, shared_model):
-    for param, shared_param in zip(model.parameters(), shared_model.parameters()):
-        if shared_param.grad is not None:
-            return
-        shared_param._grad = param.grad
-
-def train(rank, args, shared_model, optimizer):
+def train(rank, args, model, optimizer):
     torch.manual_seed(args.seed + rank)
     
     t_start = datetime.now()
     
     env = create_atari_env(args.env_name)
     env.seed(args.seed + rank)
-    
-    model = ActorCritic(env.action_space.n)
     
     running_reward = 0
     episodes = 0
@@ -35,8 +27,6 @@ def train(rank, args, shared_model, optimizer):
     done = True
     
     while True:
-        
-        model.load_state_dict(shared_model.state_dict())
         
         if done:
             cx = Variable(torch.zeros(1, 256))
@@ -116,5 +106,4 @@ def train(rank, args, shared_model, optimizer):
         optimizer.zero_grad()
         (policy_loss + 0.5 * value_loss).backward()
         torch.nn.utils.clip_grad_norm(model.parameters(), 40)
-        ensure_shared_grads(model, shared_model)
         optimizer.step()

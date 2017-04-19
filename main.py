@@ -37,15 +37,15 @@ if __name__ == '__main__':
 
     env = gym.make(args.env_name)
     
-    shared_model = ActorCritic(env.action_space.n)
-    shared_model.share_memory()
+    model = ActorCritic(env.action_space.n)
+    model.share_memory()
     
-    optimizer = SharedAdam(shared_model.parameters(), lr=args.lr)
+    optimizer = SharedAdam(model.parameters(), lr=args.lr)
     optimizer.share_memory()
 
     processes = []
     for rank in range(args.num_processes):
-        p = mp.Process(target=train, args=(rank, args, shared_model, optimizer))
+        p = mp.Process(target=train, args=(rank, args, model, optimizer))
         p.start()
         processes.append(p)
     for p in processes:
