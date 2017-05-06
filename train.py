@@ -10,6 +10,10 @@ from datetime import datetime, timedelta
 from model import ActorCritic
 from envs import create_atari_env
 
+from visdom import Visdom
+
+viz = Visdom()
+
 def train(rank, args, model, optimizer):
     torch.manual_seed(args.seed + rank)
     
@@ -25,7 +29,6 @@ def train(rank, args, model, optimizer):
         print("t_elapsed\tepisodes\trunning_reward\treward_sum")
     
     done = True
-    
     while True:
         
         if done:
@@ -33,12 +36,11 @@ def train(rank, args, model, optimizer):
             hx = Variable(torch.zeros(1, 256))
             state = env.reset()
             episodes += 1
-            game_step = 0
             reward_sum = 0
         else:
-            cx = Variable(cx.data)
-            hx = Variable(hx.data)
-
+            cx = cx.detach()
+            hx = hx.detach()
+        
         values = []
         log_probs = []
         rewards = []
@@ -49,7 +51,7 @@ def train(rank, args, model, optimizer):
             if rank == 0 and args.render:
                 env.render()
             
-            value, logit, (hx, cx) = model(state, game_step, (hx, cx))
+            value, logit, (hx, cx) = model(state, (hx, cx))
             prob = F.softmax(logit)
             log_prob = F.log_softmax(logit)
             entropy = -(log_prob * prob).sum(1)
@@ -65,7 +67,6 @@ def train(rank, args, model, optimizer):
             entropies.append(entropy)
             
             reward_sum += reward
-            game_step += 1
             
             if done:
                 t_now = datetime.now()
@@ -79,7 +80,7 @@ def train(rank, args, model, optimizer):
 
         R = torch.zeros(1, 1)
         if not done:
-            value, _, _ = model(state, game_step, (hx, cx))
+            value, _, _ = model(state, (hx, cx))
             R = value.data
         R = Variable(R)
         
@@ -98,12 +99,12 @@ def train(rank, args, model, optimizer):
             value_loss = value_loss + advantage.pow(2)
             
             # Generalized Advantage Estimataion
-            delta_t = rewards[t] + args.gamma * values[t + 1].data - values[t].data
-            gae = gae * args.gamma * args.tau + delta_t
+            delta_t = rewards[t] + args.gamma * values[t+1].data - values[t].data
+            gae = args.gamma * args.tau * gae + delta_t
 
-            policy_loss = policy_loss - log_probs[t] * Variable(gae) - 0.01 * entropies[t]
+            policy_loss = policy_loss - log_probs[t] * (Variable(gae) - 0.01 * log_probs[t].detach())
             
         optimizer.zero_grad()
         (policy_loss + 0.5 * value_loss).backward()
-        torch.nn.utils.clip_grad_norm(model.parameters(), 40)
+        #torch.nn.utils.clip_grad_norm(model.parameters(), 40)
         optimizer.step()
