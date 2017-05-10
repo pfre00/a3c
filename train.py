@@ -102,7 +102,7 @@ def train(rank, args, model, optimizer):
             delta_t = rewards[t] + args.gamma * values[t+1].data - values[t].data
             gae = args.gamma * args.tau * gae + delta_t
 
-            policy_loss = policy_loss - log_probs[t] * (Variable(gae) - 0.01 * log_probs[t].detach())
+            policy_loss = policy_loss - log_probs[t] * Variable(gae)  - 0.01 * entropies[t]
             
         optimizer.zero_grad()
         (policy_loss + 0.5 * value_loss).backward()
