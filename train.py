@@ -1,18 +1,11 @@
 import torch
-import torch.nn.functional as F
-import torch.optim as optim
 from torch.autograd import Variable
 
 import gym
 
 from datetime import datetime, timedelta
 
-from model import ActorCritic
 from envs import create_atari_env
-
-from visdom import Visdom
-
-viz = Visdom()
 
 def train(rank, args, model, optimizer):
     torch.manual_seed(args.seed + rank)
@@ -32,19 +25,18 @@ def train(rank, args, model, optimizer):
     while True:
         
         if done:
-            cx = Variable(torch.zeros(1, 256))
-            hx = Variable(torch.zeros(1, 256))
+            (hx, cx) = model.create_state()
             state = env.reset()
             episodes += 1
             reward_sum = 0
         else:
-            cx = cx.detach()
             hx = hx.detach()
+            cx = cx.detach()
         
         log_probs = []
+        entropies = []
         values = []
         rewards = []
-        entropies = []
         
         for step in range(args.num_steps):
             
@@ -60,8 +52,8 @@ def train(rank, args, model, optimizer):
             
             log_probs.append(log_prob)
             values.append(value)
-            rewards.append(clipped_reward)
             entropies.append(entropy)
+            rewards.append(clipped_reward)
             
             reward_sum += reward
             
@@ -94,10 +86,10 @@ def train(rank, args, model, optimizer):
             R = rewards[t] + args.gamma * R
             
             # Generalized Advantage Estimataion
-            td_error = rewards[t] + args.gamma * values[t+1].data - values[t].data
+            td_error = (rewards[t] + args.gamma * values[t+1] - values[t]).detach()
             gae = td_error + args.gamma * args.tau * gae
             
-            policy_loss = policy_loss - (log_probs[t] * Variable(gae) + 0.01 * entropies[t])
+            policy_loss = policy_loss - (log_probs[t] * gae + 0.01 * entropies[t])
             
             value_loss = value_loss + (R - values[t])**2
             

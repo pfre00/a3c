@@ -1,6 +1,8 @@
+import torch
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 conv_out = 192
 lstm_out = 256
@@ -42,3 +44,10 @@ class ActorCritic(nn.Module):
         value = self.critic_linear(x)
         
         return log_dist, value, (hx, cx)
+
+    def create_state(self):
+        
+        hx = Variable(torch.zeros(1, 256))
+        cx = Variable(torch.zeros(1, 256))
+        
+        return (hx, cx)
