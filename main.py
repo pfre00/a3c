@@ -26,8 +26,6 @@ parser.add_argument('--num-steps', type=int, default=20, metavar='NS',
                     help='number of forward steps in A3C (default: 20)')
 parser.add_argument('--env-name', default='Breakout-v0', metavar='ENV',
                     help='environment to train on (default: Breakout-v0)')
-parser.add_argument('--render', default=False, action='store_true',
-                    help='render the environment')
 
 
 if __name__ == '__main__':

@@ -48,9 +48,6 @@ def train(rank, args, model, optimizer):
         
         for step in range(args.num_steps):
             
-            if rank == 0 and args.render:
-                env.render()
-            
             value, logit, (hx, cx) = model(state, (hx, cx))
             prob = F.softmax(logit)
             log_prob = F.log_softmax(logit)
