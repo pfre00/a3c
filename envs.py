@@ -10,7 +10,7 @@ from torch.autograd import Variable
 def create_atari_env(env_id):
     env = gym.make(env_id)
     env = Process(env)
-    env = Normalize(env)
+    #env = Normalize(env)
     env = ToVariable(env)
     return env
 
@@ -34,22 +34,28 @@ class Process(gym.ObservationWrapper):
 
 class Normalize(gym.ObservationWrapper):
 
-    def __init__(self, env=None):
+    def __init__(self, env=None, mean=0, std=0, num_steps=0, learn=True):
         super(Normalize, self).__init__(env)
-        self.state_mean = 0
-        self.state_std = 0
+        self.state_mean = mean
+        self.state_std = std
         self.alpha = 0.9999
-        self.num_steps = 0
+        self.num_steps = num_steps
+        self.learn = learn
 
     def _observation(self, observation):
-        self.num_steps += 1
-        self.state_mean = self.state_mean * self.alpha + observation.mean() * (1 - self.alpha)
-        self.state_std = self.state_std * self.alpha + observation.std() * (1 - self.alpha)
+        
+        if self.learn:
+            self.num_steps += 1
+            self.state_mean = self.state_mean * self.alpha + observation.mean() * (1 - self.alpha)
+            self.state_std = self.state_std * self.alpha + observation.std() * (1 - self.alpha)
 
         unbiased_mean = self.state_mean / (1 - pow(self.alpha, self.num_steps))
         unbiased_std = self.state_std / (1 - pow(self.alpha, self.num_steps))
         
         return (observation - unbiased_mean) / (unbiased_std or 1)
+    
+    def stats():
+        return self.mean, self.std, self.num_eps
 
 class ToVariable(gym.ObservationWrapper):
     

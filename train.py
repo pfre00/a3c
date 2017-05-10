@@ -26,7 +26,7 @@ def train(rank, args, model, optimizer):
         
         if done:
             (hx, cx) = model.create_state()
-            state = env.reset()
+            observation = env.reset()
             episodes += 1
             reward_sum = 0
         else:
@@ -40,11 +40,11 @@ def train(rank, args, model, optimizer):
         
         for step in range(args.num_steps):
             
-            log_dist, value, (hx, cx) = model(state, (hx, cx))
+            log_dist, value, (hx, cx) = model(observation, (hx, cx))
             dist = log_dist.exp()
 
             action = dist.multinomial().detach()
-            state, reward, done, _ = env.step(action.data[0][0])
+            observation, reward, done, _ = env.step(action.data[0][0])
             
             log_prob = log_dist.gather(1, action)
             clipped_reward = max(min(reward, 1), -1)
@@ -69,7 +69,7 @@ def train(rank, args, model, optimizer):
 
         R = torch.zeros(1, 1)
         if not done:
-            _, value, _ = model(state, (hx, cx))
+            _, value, _ = model(observation, (hx, cx))
             R = value.data
         R = Variable(R)
         
