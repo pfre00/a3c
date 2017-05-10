@@ -66,6 +66,7 @@ def train(rank, args, model, optimizer):
             reward_sum += reward
             
             if done:
+                torch.save(model.state_dict(), "state_dict.data")
                 t_elapsed = datetime.now() - t_start
                 running_reward = running_reward * 0.99 + reward_sum * 0.01
                 unbiased_running_reward = running_reward / (1 - pow(0.99, episodes))
