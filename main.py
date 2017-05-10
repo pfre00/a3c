@@ -6,9 +6,8 @@ import torch.multiprocessing as mp
 import gym
 
 from model import ActorCritic
-from train import train
 from shared_adam import SharedAdam
-from shared_rmsprop import SharedRMSprop
+from train import train
 
 # Training settings
 parser = argparse.ArgumentParser(description='A3C')
@@ -30,7 +29,6 @@ parser.add_argument('--env-name', default='Breakout-v0', metavar='ENV',
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    
     torch.manual_seed(args.seed)
 
     env = gym.make(args.env_name)

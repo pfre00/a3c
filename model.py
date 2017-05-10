@@ -38,4 +38,7 @@ class ActorCritic(nn.Module):
         hx, cx = self.lstm(x, (hx, cx))
         x = hx
         
-        return self.critic_linear(x), self.actor_linear(x), (hx, cx)
+        log_dist = F.log_softmax(self.actor_linear(x))
+        value = self.critic_linear(x)
+        
+        return log_dist, value, (hx, cx)

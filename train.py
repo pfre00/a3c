@@ -17,8 +17,6 @@ viz = Visdom()
 def train(rank, args, model, optimizer):
     torch.manual_seed(args.seed + rank)
     
-    t_start = datetime.now()
-    
     env = create_atari_env(args.env_name)
     env.seed(args.seed + rank)
     
@@ -27,6 +25,8 @@ def train(rank, args, model, optimizer):
     
     if rank == 0:
         print("t_elapsed\tepisodes\trunning_reward\treward_sum")
+    
+    t_start = datetime.now()
     
     done = True
     while True:
@@ -41,33 +41,32 @@ def train(rank, args, model, optimizer):
             cx = cx.detach()
             hx = hx.detach()
         
-        values = []
         log_probs = []
+        values = []
         rewards = []
         entropies = []
         
         for step in range(args.num_steps):
             
-            value, logit, (hx, cx) = model(state, (hx, cx))
-            prob = F.softmax(logit)
-            log_prob = F.log_softmax(logit)
-            entropy = -(log_prob * prob).sum(1)
+            log_dist, value, (hx, cx) = model(state, (hx, cx))
+            dist = log_dist.exp()
 
-            action = Variable(prob.multinomial().data)
-            log_prob = log_prob.gather(1, action)
-
+            action = dist.multinomial().detach()
             state, reward, done, _ = env.step(action.data[0][0])
             
-            values.append(value)
+            log_prob = log_dist.gather(1, action)
+            clipped_reward = max(min(reward, 1), -1)
+            entropy = -(dist * log_dist).sum(1)
+            
             log_probs.append(log_prob)
-            rewards.append(max(min(reward, 1), -1))
+            values.append(value)
+            rewards.append(clipped_reward)
             entropies.append(entropy)
             
             reward_sum += reward
             
             if done:
-                t_now = datetime.now()
-                t_elapsed = t_now - t_start
+                t_elapsed = datetime.now() - t_start
                 running_reward = running_reward * 0.99 + reward_sum * 0.01
                 unbiased_running_reward = running_reward / (1 - pow(0.99, episodes))
                 if rank == 0:
@@ -77,29 +76,29 @@ def train(rank, args, model, optimizer):
 
         R = torch.zeros(1, 1)
         if not done:
-            value, _, _ = model(state, (hx, cx))
+            _, value, _ = model(state, (hx, cx))
             R = value.data
         R = Variable(R)
         
         values.append(R)
         
-        gae = torch.zeros(1, 1)
+        gae = 0
         
         policy_loss = 0
         value_loss = 0
         
         for t in reversed(range(len(rewards))):
             
+            # Value estimation
             R = rewards[t] + args.gamma * R
-            advantage = R - values[t]
-            
-            value_loss = value_loss + advantage.pow(2)
             
             # Generalized Advantage Estimataion
-            delta_t = rewards[t] + args.gamma * values[t+1].data - values[t].data
-            gae = args.gamma * args.tau * gae + delta_t
-
-            policy_loss = policy_loss - log_probs[t] * Variable(gae)  - 0.01 * entropies[t]
+            td_error = rewards[t] + args.gamma * values[t+1].data - values[t].data
+            gae = td_error + args.gamma * args.tau * gae
+            
+            policy_loss = policy_loss - (log_probs[t] * Variable(gae) + 0.01 * entropies[t])
+            
+            value_loss = value_loss + (R - values[t])**2
             
         optimizer.zero_grad()
         (policy_loss + 0.5 * value_loss).backward()
