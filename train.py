@@ -47,8 +47,8 @@ def train(rank, args, model, optimizer):
             observation, reward, done, _ = env.step(action.data[0][0])
             
             log_prob = log_dist.gather(1, action)
-            clipped_reward = max(min(reward, 1), -1)
             entropy = -(dist * log_dist).sum(1)
+            clipped_reward = max(min(reward, 1), -1)
             
             log_probs.append(log_prob)
             values.append(value)
@@ -58,6 +58,7 @@ def train(rank, args, model, optimizer):
             reward_sum += reward
             
             if done:
+                R = Variable(torch.zeros(1, 1))
                 torch.save(model.state_dict(), "state_dict.data")
                 t_elapsed = datetime.now() - t_start
                 running_reward = running_reward * 0.99 + reward_sum * 0.01
@@ -67,11 +68,9 @@ def train(rank, args, model, optimizer):
                         t_elapsed, episodes, unbiased_running_reward, reward_sum))
                 break
 
-        R = torch.zeros(1, 1)
         if not done:
             _, value, _ = model(observation, (hx, cx))
-            R = value.data
-        R = Variable(R)
+            R = value.detach()
         
         values.append(R)
         
